@@ -7,8 +7,8 @@
 		"dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register app/main.ts",
 		"build": "tsc && tsc-alias",
 		"start": "node dist/app/main.js",
-		"test": "jest --runInBand --forceExit",
-		"test:coverage": "jest --runInBand --forceExit --coverage",
+		"test": "jest --runInBand --detectOpenHandles",
+		"test:coverage": "jest --runInBand --detectOpenHandles --coverage",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"check": "biome check --write ."

@@ -14,7 +14,17 @@ const config: Config = {
 		"^@outbounds/(.*)$": "<rootDir>/src/outbounds/$1",
 		"^@routers/(.*)$": "<rootDir>/src/routers/$1",
 	},
-	collectCoverageFrom: ["src/**/*.ts", "app/**/*.ts", "!**/*.d.ts"],
+	collectCoverageFrom: [
+		"src/**/*.ts",
+		"app/**/*.ts",
+		"!**/*.d.ts",
+		"!**/index.ts",
+		"!src/domains/**/model.ts",
+		"!src/domains/**/port.ts",
+		"!src/outbounds/repositories/UserRepository.ts",
+		"!src/routers/**",
+		"!app/route.ts",
+	],
 	coverageDirectory: "coverage",
 	coverageReporters: ["text", "lcov"],
 };
