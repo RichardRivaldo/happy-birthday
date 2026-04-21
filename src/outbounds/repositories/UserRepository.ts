@@ -1,5 +1,7 @@
+import { DuplicateError } from "@shared/errors";
 import type { ICreateUserPayload, IUpdateUserPayload, IUser } from "@domains/user-management/model";
 import type { IUserRepository } from "@domains/user-management/port";
+import { MongoServerError } from "mongodb";
 import { Schema, model, type Document } from "mongoose";
 
 type UserDocument = Omit<IUser, "id"> & Document;
@@ -34,8 +36,15 @@ function toIUser(doc: UserDocument): IUser {
 
 export class UserRepository implements IUserRepository {
 	async create(payload: ICreateUserPayload): Promise<IUser> {
-		const doc = await UserModel.create(payload);
-		return toIUser(doc);
+		try {
+			const doc = await UserModel.create(payload);
+			return toIUser(doc);
+		} catch (err: unknown) {
+			if (err instanceof MongoServerError && err.code === 11000) {
+				throw new DuplicateError(`Email '${payload.email}' is already in use!`);
+			}
+			throw err;
+		}
 	}
 
 	async findById(id: string): Promise<IUser | null> {

@@ -1,6 +1,7 @@
 import { config, connectDatabase } from "@config/index";
 import { UserService } from "@domains/user-management/service";
 import { UserRepository } from "@outbounds/repositories/index";
+import { DuplicateError, NotFoundError } from "@shared/errors";
 import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { ZodError } from "zod";
@@ -22,9 +23,18 @@ function buildApp(): void {
 			return;
 		}
 
+		if (err instanceof NotFoundError) {
+			res.status(404).json({ error: err.message });
+			return;
+		}
+
+		if (err instanceof DuplicateError) {
+			res.status(409).json({ error: err.message });
+			return;
+		}
+
 		if (err instanceof Error) {
-			const isNotFound = err.message.includes("not found");
-			res.status(isNotFound ? 404 : 500).json({ error: err.message });
+			res.status(500).json({ error: err.message });
 			return;
 		}
 
