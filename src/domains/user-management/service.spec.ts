@@ -148,6 +148,24 @@ describe("UserService", () => {
 
 			expect(result).toEqual(updated);
 			expect(mockRepository.update).toHaveBeenCalledWith(mockUser.id, { name: "Jane Doe" });
+			expect(mockScheduler.reschedule).not.toHaveBeenCalled();
+		});
+
+		it("reschedules when birthday is updated", async () => {
+			const updated: IUser = { ...mockUser, birthday: "1990-06-20" };
+			mockRepository.update.mockResolvedValue(updated);
+
+			await service.updateUser(mockUser.id, { birthday: "1990-06-20" });
+
+			expect(mockScheduler.reschedule).toHaveBeenCalledWith(updated);
+		});
+
+		it("reschedules when timezone is updated", async () => {
+			const updated: IUser = { ...mockUser, timezone: "Asia/Tokyo" };
+			mockRepository.update.mockResolvedValue(updated);
+
+			await service.updateUser(mockUser.id, { timezone: "Asia/Tokyo" });
+
 			expect(mockScheduler.reschedule).toHaveBeenCalledWith(updated);
 		});
 

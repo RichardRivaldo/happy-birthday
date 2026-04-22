@@ -27,7 +27,9 @@ export class UserService {
 		updateUserSchema.parse(payload);
 		const user = await this.userRepository.update(id, payload);
 		if (!user) throw new NotFoundError(`User with id '${id}' cannot be found!`);
-		await this.birthdayScheduler.reschedule(user);
+		if (payload.birthday !== undefined || payload.timezone !== undefined) {
+			await this.birthdayScheduler.reschedule(user);
+		}
 		return user;
 	}
 
