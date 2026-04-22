@@ -1,4 +1,4 @@
-import { config, connectDatabase } from "@config/index";
+import { config, connectDatabase, disconnectDatabase } from "@config/index";
 import { BirthdayReminderService } from "@domains/birthday-reminder";
 import { UserService } from "@domains/user-management";
 import { MessagingClient, SchedulerClient } from "@outbounds/clients";
@@ -14,10 +14,8 @@ const app = express();
 
 app.use(express.json());
 
-async function buildApp(): Promise<void> {
+async function buildApp(agenda: Agenda): Promise<void> {
 	const userRepository = new UserRepository();
-
-	const agenda = new Agenda({ db: { address: config.dbUri } });
 
 	const scheduler = new SchedulerClient(agenda);
 	const messagingClient = new MessagingClient();
@@ -61,11 +59,22 @@ async function buildApp(): Promise<void> {
 
 async function bootstrap(): Promise<void> {
 	await connectDatabase();
-	await buildApp();
+	const agenda = new Agenda({ db: { address: config.dbUri } });
+	await buildApp(agenda);
 
 	app.listen(config.port, () => {
 		console.log(`Server running on port ${config.port}.`);
 	});
+
+	const shutdown = (): void => {
+		agenda
+			.stop()
+			.then(() => disconnectDatabase())
+			.then(() => process.exit(0));
+	};
+
+	process.on("SIGTERM", shutdown);
+	process.on("SIGINT", shutdown);
 }
 
 bootstrap().catch((err) => {
