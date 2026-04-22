@@ -1,7 +1,10 @@
 import { config, connectDatabase } from "@config/index";
-import { UserService } from "@domains/user-management/service";
-import { UserRepository } from "@outbounds/repositories/index";
+import { BirthdayReminderService } from "@domains/birthday-reminder";
+import { UserService } from "@domains/user-management";
+import { MessagingClient, SchedulerClient } from "@outbounds/clients";
+import { UserRepository } from "@outbounds/repositories";
 import { DuplicateError, NotFoundError } from "@shared/errors";
+import Agenda from "agenda";
 import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { ZodError } from "zod";
@@ -11,9 +14,23 @@ const app = express();
 
 app.use(express.json());
 
-function buildApp(): void {
+async function buildApp(): Promise<void> {
 	const userRepository = new UserRepository();
-	const userService = new UserService(userRepository);
+
+	const agenda = new Agenda({ db: { address: config.dbUri } });
+
+	const scheduler = new SchedulerClient(agenda);
+	const messagingClient = new MessagingClient();
+
+	const birthdayReminderService = new BirthdayReminderService(
+		userRepository,
+		scheduler,
+		messagingClient,
+	);
+
+	await birthdayReminderService.start();
+
+	const userService = new UserService(userRepository, birthdayReminderService);
 
 	app.use("/api/v1", createRouter(userService));
 
@@ -44,7 +61,7 @@ function buildApp(): void {
 
 async function bootstrap(): Promise<void> {
 	await connectDatabase();
-	buildApp();
+	await buildApp();
 
 	app.listen(config.port, () => {
 		console.log(`Server running on port ${config.port}.`);

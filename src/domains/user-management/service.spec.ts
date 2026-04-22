@@ -1,4 +1,5 @@
 import { DuplicateError, NotFoundError } from "@shared/errors";
+import type { IBirthdayScheduler } from "@domains/birthday-reminder/port";
 import { ZodError } from "zod";
 import type { ICreateUserPayload, IUpdateUserPayload, IUser } from "./model";
 import type { IUserRepository } from "./port";
@@ -22,6 +23,7 @@ const validCreatePayload: ICreateUserPayload = {
 describe("UserService", () => {
 	let service: UserService;
 	let mockRepository: jest.Mocked<IUserRepository>;
+	let mockScheduler: jest.Mocked<IBirthdayScheduler>;
 
 	beforeEach(() => {
 		mockRepository = {
@@ -30,7 +32,12 @@ describe("UserService", () => {
 			update: jest.fn(),
 			delete: jest.fn(),
 		};
-		service = new UserService(mockRepository);
+		mockScheduler = {
+			schedule: jest.fn().mockResolvedValue(undefined),
+			reschedule: jest.fn().mockResolvedValue(undefined),
+			cancel: jest.fn().mockResolvedValue(undefined),
+		};
+		service = new UserService(mockRepository, mockScheduler);
 	});
 
 	afterEach(() => {
@@ -46,6 +53,7 @@ describe("UserService", () => {
 			expect(result).toEqual(mockUser);
 			expect(mockRepository.create).toHaveBeenCalledTimes(1);
 			expect(mockRepository.create).toHaveBeenCalledWith(validCreatePayload);
+			expect(mockScheduler.schedule).toHaveBeenCalledWith(mockUser);
 		});
 
 		it("throws ZodError for an empty name", async () => {
@@ -140,6 +148,7 @@ describe("UserService", () => {
 
 			expect(result).toEqual(updated);
 			expect(mockRepository.update).toHaveBeenCalledWith(mockUser.id, { name: "Jane Doe" });
+			expect(mockScheduler.reschedule).toHaveBeenCalledWith(updated);
 		});
 
 		it("accepts a partial payload with only email", async () => {
@@ -190,6 +199,7 @@ describe("UserService", () => {
 
 			await expect(service.deleteUser(mockUser.id)).resolves.toBeUndefined();
 			expect(mockRepository.delete).toHaveBeenCalledWith(mockUser.id);
+			expect(mockScheduler.cancel).toHaveBeenCalledWith(mockUser.id);
 		});
 
 		it("throws an error when the user does not exist", async () => {

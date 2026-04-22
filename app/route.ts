@@ -1,6 +1,6 @@
-import { Router } from "express";
-import type { UserService } from "@domains/user-management/service";
+import type { UserService } from "@domains/user-management";
 import { createUserRouter } from "@routers/index";
+import { Router } from "express";
 
 export function createRouter(userService: UserService): Router {
 	const router = Router();
