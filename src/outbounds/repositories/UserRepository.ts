@@ -53,8 +53,15 @@ export class UserRepository implements IUserRepository {
 	}
 
 	async update(id: string, payload: IUpdateUserPayload): Promise<IUser | null> {
-		const doc = await UserModel.findByIdAndUpdate(id, payload, { new: true }).exec();
-		return doc ? toIUser(doc) : null;
+		try {
+			const doc = await UserModel.findByIdAndUpdate(id, payload, { new: true }).exec();
+			return doc ? toIUser(doc) : null;
+		} catch (err: unknown) {
+			if (err instanceof MongoServerError && err.code === 11000) {
+				throw new DuplicateError(`Email '${payload.email}' is already in use!`);
+			}
+			throw err;
+		}
 	}
 
 	async delete(id: string): Promise<boolean> {
