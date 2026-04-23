@@ -95,6 +95,24 @@ DELETE /api/v1/users/:id
 
 Response `204`. Cancels any pending birthday jobs for the user. `404` if not found.
 
+## Sample Simulations
+
+- To simulate the scheduler, register a user. This will automatically register a schedule for the birthday reminder.
+- Adjust the job data to run at past timestamp. You can use this snippet with `mongosh` for simplicity.
+
+```
+db.agendaJobs.updateOne({
+	"data.userId": "<registered_user_id>"
+},
+{
+	$set: {
+		nextRunAt: new Date("2026-04-22")
+	}
+})
+```
+
+- The birthday reminder will be logged on the application level.
+
 ## Design Decisions
 
 ### Scheduling
