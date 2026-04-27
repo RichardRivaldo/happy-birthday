@@ -1,6 +1,6 @@
 import type { IUser, IUserRepository } from "@domains/user-management";
 import { DateTime } from "luxon";
-import type { IJobScheduler, IMessagingClient } from "./port";
+import type { IBirthdayReminderLogRepository, IJobScheduler, IMessagingClient } from "./port";
 import { BirthdayReminderService } from "./service";
 
 const timezone = "America/New_York";
@@ -21,6 +21,7 @@ describe("BirthdayReminderService", () => {
 	let mockJobScheduler: jest.Mocked<IJobScheduler>;
 	let mockMessagingClient: jest.Mocked<IMessagingClient>;
 	let mockUserRepository: jest.Mocked<IUserRepository>;
+	let mockReminderLogRepository: jest.Mocked<IBirthdayReminderLogRepository>;
 
 	beforeEach(() => {
 		mockJobScheduler = {
@@ -37,11 +38,15 @@ describe("BirthdayReminderService", () => {
 			update: jest.fn(),
 			delete: jest.fn(),
 		};
+		mockReminderLogRepository = {
+			markSent: jest.fn().mockResolvedValue(true),
+		};
 
 		service = new BirthdayReminderService(
 			mockUserRepository,
 			mockJobScheduler,
 			mockMessagingClient,
+			mockReminderLogRepository,
 		);
 	});
 
@@ -141,6 +146,18 @@ describe("BirthdayReminderService", () => {
 			const handler = await captureHandler();
 
 			await handler("deleted-user-id");
+
+			expect(mockMessagingClient.sendBirthdayMessage).not.toHaveBeenCalled();
+			expect(mockJobScheduler.scheduleJob).not.toHaveBeenCalled();
+		});
+
+		it("does nothing when a message was already sent this year (duplicate guard)", async () => {
+			const user = makeUser();
+			mockUserRepository.findById.mockResolvedValue(user);
+			mockReminderLogRepository.markSent.mockResolvedValue(false);
+			const handler = await captureHandler();
+
+			await handler(user.id);
 
 			expect(mockMessagingClient.sendBirthdayMessage).not.toHaveBeenCalled();
 			expect(mockJobScheduler.scheduleJob).not.toHaveBeenCalled();

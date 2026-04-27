@@ -1,18 +1,29 @@
 import type { IUser, IUserRepository } from "@domains/user-management";
 import { DateTime } from "luxon";
-import type { IBirthdayScheduler, IJobScheduler, IMessagingClient } from "./port";
+import type {
+	IBirthdayReminderLogRepository,
+	IBirthdayScheduler,
+	IJobScheduler,
+	IMessagingClient,
+} from "./port";
 
 export class BirthdayReminderService implements IBirthdayScheduler {
 	constructor(
 		private readonly userRepository: IUserRepository,
 		private readonly jobScheduler: IJobScheduler,
 		private readonly messagingClient: IMessagingClient,
+		private readonly reminderLogRepository: IBirthdayReminderLogRepository,
 	) {}
 
 	async start(): Promise<void> {
 		await this.jobScheduler.start(async (userId: string) => {
 			const user = await this.userRepository.findById(userId);
 			if (!user) return;
+
+			const year = DateTime.now().setZone(user.timezone).year;
+			const sent = await this.reminderLogRepository.markSent(userId, year);
+			if (!sent) return;
+
 			this.messagingClient.sendBirthdayMessage(user);
 			await this.schedule(user);
 		});

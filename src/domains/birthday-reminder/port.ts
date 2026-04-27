@@ -15,3 +15,7 @@ export interface IJobScheduler {
 export interface IMessagingClient {
 	sendBirthdayMessage(user: IUser): void;
 }
+
+export interface IBirthdayReminderLogRepository {
+	markSent(userId: string, year: number): Promise<boolean>;
+}

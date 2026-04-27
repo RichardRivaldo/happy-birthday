@@ -2,7 +2,7 @@ import { config, connectDatabase, disconnectDatabase } from "@config/index";
 import { BirthdayReminderService } from "@domains/birthday-reminder";
 import { UserService } from "@domains/user-management";
 import { MessagingClient, SchedulerClient } from "@outbounds/clients";
-import { UserRepository } from "@outbounds/repositories";
+import { BirthdayReminderLogRepository, UserRepository } from "@outbounds/repositories";
 import { DuplicateError, NotFoundError } from "@shared/errors";
 import Agenda from "agenda";
 import "dotenv/config";
@@ -19,11 +19,13 @@ async function buildApp(agenda: Agenda): Promise<void> {
 
 	const scheduler = new SchedulerClient(agenda);
 	const messagingClient = new MessagingClient();
+	const reminderLogRepository = new BirthdayReminderLogRepository();
 
 	const birthdayReminderService = new BirthdayReminderService(
 		userRepository,
 		scheduler,
 		messagingClient,
+		reminderLogRepository,
 	);
 
 	await birthdayReminderService.start();
