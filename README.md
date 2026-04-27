@@ -113,6 +113,9 @@ db.agendaJobs.updateOne({
 
 - The birthday reminder will be logged on the application level.
 
+<img width="1321" height="225" alt="image" src="https://github.com/user-attachments/assets/f56c2303-9318-4d96-8dc8-1c08620a5565" />
+
+
 ## Design Decisions
 
 ### Scheduling
